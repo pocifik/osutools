@@ -46,9 +46,9 @@ def parseString(db, offset):
 
         unic = u''
         try:
-            unic = unicode(string, 'utf-8')
+            unic = str(string, 'utf-8')
         except UnicodeDecodeError:
-            print "Could not parse UTF-8 string, returning empty string."
+            print("Could not parse UTF-8 string, returning empty string.")
 
         return (unic, offset)
 
@@ -107,6 +107,9 @@ def parseBeatmap(db, offset):
     return (beatmap, offset)
 
 def parseLongBeatmap(db, offset):
+
+    wtf, offset = parseNum(db, offset, 4)
+
     beatmap = {}
     beatmap['artist_name'], offset = parseString(db, offset)
     beatmap['artist_uname'], offset = parseString(db, offset)
@@ -183,10 +186,16 @@ def parseLongBeatmap(db, offset):
     beatmap['scroll_speed'], offset = parseNum(db, offset, 1)
 
     # extra metadata
-    bpms = [p['bpm'] for p in beatmap['timing_points'] if not p['inherited']]
-    beatmap['max_bpm'] = max(bpms)
-    beatmap['min_bpm'] = min(bpms)
-    beatmap['bpm'] = beatmap['timing_points'][0]['bpm']
+    if not beatmap['timing_points']:
+        beatmap['max_bpm'] = 0
+        beatmap['min_bpm'] = 0
+        beatmap['bpm'] = 0
+    else:
+        bpms = [p['bpm'] for p in beatmap['timing_points'] if not p['inherited']]
+        beatmap['max_bpm'] = max(bpms)
+        beatmap['min_bpm'] = min(bpms)
+        beatmap['bpm'] = beatmap['timing_points'][0]['bpm']
+    
     beatmap['difficultyrating'] = difficulties[beatmap['mode']]
     beatmap['num_objects'] = beatmap['num_hitcircles'] + beatmap['num_sliders'] + beatmap['num_spinners']
 
@@ -347,6 +356,7 @@ def parseOsuDb(db):
     offset = 0
     data = {}
     data['version'], offset = parseNum(db, offset, 4)
+
     data['folder_count'], offset = parseNum(db, offset, 4)
     data['account_unlocked'], offset = parseBool(db, offset)
     # yo i'm not sure about this
@@ -363,12 +373,12 @@ def parseOsuDb(db):
 
 if __name__ == "__main__":
     # load the scores.db file in this directory
-    scoresDb = open('data/scores.db')
-    scores = parseScoresDb(scoresDb.read())
-    scoresDb.close()
+    with open('data/scores.db', 'rb') as f:
+        scoresDb = f
+        scores = parseScoresDb(scoresDb.read())
     json.dump(scores, open('data/scores.json', 'w'), indent=4)
     
-    osuDb = open('data/osu!.db')
-    beatmaps = parseOsuDb(osuDb.read())
-    osuDb.close()
+    with open('data/osu!.db', 'rb') as f:
+        osuDb = f
+        beatmaps = parseOsuDb(osuDb.read())
     json.dump(beatmaps, open('data/beatmaps.json', 'w'), indent=4)
