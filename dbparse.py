@@ -108,7 +108,7 @@ def parseBeatmap(db, offset):
 
 def parseLongBeatmap(db, offset):
 
-    wtf, offset = parseNum(db, offset, 4)
+    beatmap_size_but_we_dont_need_it, offset = parseNum(db, offset, 4)
 
     beatmap = {}
     beatmap['artist_name'], offset = parseString(db, offset)
